@@ -1,35 +1,48 @@
--- updater.lua (SERVER-SIDE)
-local CURRENT_VERSION = "1.0.0"
-local GITHUB_REPO = "rmdark/keymaster"
+local resourceFolder = "keymaster"
+local currentVersionFile = resourceFolder .. "/version.txt"
+local remoteVersionUrl = "https://raw.githubusercontent.com/rmdark/RichMill-Weapon-Pack-V1/master/version.txt"
+local zipUrl = "https://github.com/rmdark/RichMill-Weapon-Pack-V1/archive/refs/tags/1.2.3.zip"
+local tempZipPath = resourceFolder .. "/temp.zip"
+local tempExtractPath = resourceFolder .. "/temp_extract"
 
-AddEventHandler('onResourceStart', function(resourceName)
-    if GetCurrentResourceName() ~= resourceName then return end
-    
-    PerformHttpRequest(("https://api.github.com/repos/%s/releases/latest"):format(GITHUB_REPO), 
-    function(err, response, headers)
-        if err ~= 200 then
-            print(("[^3Keymaster^7] Failed to check updates (Error %s)"):format(err))
-            return
-        end
+-- Function to read a file synchronously
+local function readFile(filePath)
+    local file = io.open(filePath, "r")
+    if not file then return nil end
+    local content = file:read("*a")
+    file:close()
+    return content
+end
 
-        local data = json.decode(response)
-        if not data or not data.tag_name then
-            print("[^3Keymaster^7] Invalid update response from GitHub")
-            return
-        end
+-- Function to write a file synchronously
+local function writeFile(filePath, content)
+    local file = io.open(filePath, "w")
+    if file then
+        file:write(content)
+        file:close()
+    end
+end
 
-        local latestVersion = data.tag_name:gsub("v", "")
-        if latestVersion ~= CURRENT_VERSION then
-            print(("
-^5===============================================^7"))
-            print(("[^3Keymaster^7] Update available: ^2%s^7 (Current: ^1%s^7)"):format(data.tag_name, "v"..CURRENT_VERSION))
-            print(("[^3Keymaster^7] Changelog: ^5%s^7"):format(data.body:gsub("
-", " ")))
-            print(("[^3Keymaster^7] Download: ^3%s^7"):format(data.html_url))
-            print("^5===============================================^7
-")
+-- Function to download a file
+local function downloadFile(url, filePath)
+    PerformHttpRequest(url, function(statusCode, response, headers)
+        if statusCode == 200 then
+            print("Download successful.")
+            writeFile(filePath, response)
         else
-            print("[^3Keymaster^7] Resource is ^2up to date^7")
+            print("Download failed with status code: " .. statusCode)
         end
-    end, 'GET', '', {}, {code = 200})
-end)
+    end)
+end
+
+-- Function to extract a zip file
+local function extractZip(zipPath, extractPath)
+    -- Using a basic shell command to extract zip, assuming you use unzip utility
+    -- You can use a Lua library for better cross-platform support
+    os.execute("unzip " .. zipPath .. " -d " .. extractPath)
+end
+
+-- Function to check for updates
+local function checkForUpdates()
+    local currentVersion = readFile(currentVersionFile)
+    downloadFile(remoteVersionUrl, tempZipPath)

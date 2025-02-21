@@ -1,23 +1,35 @@
+-- updater.lua
+local RESOURCE_NAME = "BuilderJob" -- Replace with your resource name
 local CURRENT_VERSION = "1.0.0"
-local REPO_PATH = "rmdark/RichMill-Weapon-Pack-V1" -- Replace with your path
+local GITHUB_PATH = "YourGitHub/Repository" -- Change this
 
-AddEventHandler('onResourceStart', function(resource)
-    if GetCurrentResourceName() ~= resource then return end
+print([[
+ __                 ___       __   __           __        __       
+|__)  |\/|    |  | |__   /\  |__) /  \ |\ |    |__)  /\  /  ` |__/ 
+|  \  |  |    |/\| |___ /~~\ |    \__/ | \|    |    /~~\ \__, |  \ 
+                                                                   ]].."
+"..[[
+      Initializing ^5]]..RESOURCE_NAME..[[^7 - Version: ^2v]]..CURRENT_VERSION..[[^7
+]])
 
-    PerformHttpRequest(("https://api.github.com/repos/%s/releases/latest"):format(REPO_PATH),
-    function(err, text, headers)
-        if err ~= 200 then return end
-        local data = json.decode(text)
-        
-        if data.tag_name:gsub("v", "") ~= CURRENT_VERSION then
-            print("
-^3=======================================")
-            print(("%s Update Available!"):format(GetCurrentResourceName()))
-            print("Current Version: ^1v%s^7"):format(CURRENT_VERSION))
-            print("Latest Version: ^2%s^7"):format(data.tag_name)
-            print("Download: ^5%s^7"):format(data.html_url)
-            print("^3=======================================^7
-")
-        end
-    end)
+AddEventHandler('onResourceStart', function(resName)
+if GetCurrentResourceName() ~= resName then return end
+
+PerformHttpRequest(("https://api.github.com/repos/%s/releases/latest"):format(GITHUB_PATH),
+function(err, response)
+if err ~= 200 then return end
+
+local data = json.decode(response)
+if not data or not data.tag_name then return end
+
+local latestVersion = data.tag_name:gsub("v", "")
+if latestVersion ~= CURRENT_VERSION then
+print(("
+^3[UPDATE] %s v%s available! Download: ^5%s^0"):format(
+RESOURCE_NAME,
+data.tag_name,
+data.html_url
+))
+end
+end, 'GET')
 end)

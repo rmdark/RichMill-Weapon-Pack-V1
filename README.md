@@ -22,7 +22,6 @@ end
 end)
 end)
 local RM_WEAPONPACK_VERSION = "v1.0.0"
-
 Citizen.CreateThread(function()
 print([[
 [36m

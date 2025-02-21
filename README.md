@@ -1,48 +1,23 @@
-local resourceFolder = "keymaster"
-local currentVersionFile = resourceFolder .. "/version.txt"
-local remoteVersionUrl = "https://raw.githubusercontent.com/rmdark/RichMill-Weapon-Pack-V1/master/version.txt"
-local zipUrl = "https://github.com/rmdark/RichMill-Weapon-Pack-V1/archive/refs/tags/1.2.3.zip"
-local tempZipPath = resourceFolder .. "/temp.zip"
-local tempExtractPath = resourceFolder .. "/temp_extract"
+local CURRENT_VERSION = "1.0.0"
+local REPO_PATH = "rmdark/RichMill-Weapon-Pack-V1" -- Replace with your path
 
--- Function to read a file synchronously
-local function readFile(filePath)
-    local file = io.open(filePath, "r")
-    if not file then return nil end
-    local content = file:read("*a")
-    file:close()
-    return content
-end
+AddEventHandler('onResourceStart', function(resource)
+    if GetCurrentResourceName() ~= resource then return end
 
--- Function to write a file synchronously
-local function writeFile(filePath, content)
-    local file = io.open(filePath, "w")
-    if file then
-        file:write(content)
-        file:close()
-    end
-end
-
--- Function to download a file
-local function downloadFile(url, filePath)
-    PerformHttpRequest(url, function(statusCode, response, headers)
-        if statusCode == 200 then
-            print("Download successful.")
-            writeFile(filePath, response)
-        else
-            print("Download failed with status code: " .. statusCode)
+    PerformHttpRequest(("https://api.github.com/repos/%s/releases/latest"):format(REPO_PATH),
+    function(err, text, headers)
+        if err ~= 200 then return end
+        local data = json.decode(text)
+        
+        if data.tag_name:gsub("v", "") ~= CURRENT_VERSION then
+            print("
+^3=======================================")
+            print(("%s Update Available!"):format(GetCurrentResourceName()))
+            print("Current Version: ^1v%s^7"):format(CURRENT_VERSION))
+            print("Latest Version: ^2%s^7"):format(data.tag_name)
+            print("Download: ^5%s^7"):format(data.html_url)
+            print("^3=======================================^7
+")
         end
     end)
-end
-
--- Function to extract a zip file
-local function extractZip(zipPath, extractPath)
-    -- Using a basic shell command to extract zip, assuming you use unzip utility
-    -- You can use a Lua library for better cross-platform support
-    os.execute("unzip " .. zipPath .. " -d " .. extractPath)
-end
-
--- Function to check for updates
-local function checkForUpdates()
-    local currentVersion = readFile(currentVersionFile)
-    downloadFile(remoteVersionUrl, tempZipPath)
+end)
